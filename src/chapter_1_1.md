@@ -1,6 +1,6 @@
 # Pipelines and Bindings
 
-Bevy, like many other game engines and or API's, has a concept of a rendering pipeline. A render pipeline's sole job is to provide information to the GPU about how and what it is rendering.
+Bevy, like many other game engines and or APIs, has a concept of a rendering pipeline. A render pipeline's sole job is to provide information to the GPU about how and what it is rendering.
 
 Bevy has two pipelines, a render pipeline, and a compute pipeline. In the future, there might be more pipelines created to provide additional functionality. In simple terms, a pipeline, is a CPU representation of the
 shader you are using, along with any additional information the GPU needs to know. 
