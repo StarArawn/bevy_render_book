@@ -132,7 +132,7 @@ Using this trait we can build out our render/compute pipelines and bind-group la
         // Information about the target texture the fragment is writing to.
         targets: &[ColorTargetState {
             // Default frame buffer texture Bevy uses.
-            format: TextureFormat::Bevy_default(), 
+            format: TextureFormat::bevy_default(), 
             // Default blend states.
             blend: Some(BlendState {
                 color: BlendComponent {
