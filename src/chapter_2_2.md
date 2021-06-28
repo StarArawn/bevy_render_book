@@ -1,5 +1,5 @@
 # FromWorld, Extract, Prepare, Queue, and Draw
-In this section we'll cover the 4 main stages of bevy's renderer.
+In this section we'll cover the 4 main stages of Bevy's renderer.
 1. [Building the shaders, pipelines, and bind group layouts using `FromWorld`.](#1-building-the-shaders-pipelines-and-bind-group-layouts-using-fromworld)
 2. [Extract Stage: GPU data from ECS data that will be consumed by Prepare/Draw.](#2-extract-stage-gpu-data-from-ecs-data-that-will-be-consumed-by-preparedraw)
 3. [Prepare Stage: Prepares the GPU data by copying the data from the CPU to the GPU.](#3-prepare-stage-prepares-the-gpu-data-by-copying-the-data-from-the-cpu-to-the-gpu)
@@ -9,17 +9,17 @@ In this section we'll cover the 4 main stages of bevy's renderer.
 ### Bevy Render Stages:
 - Extract - Extract data from "app world" and insert it into "render world". This step should be kept as short as possible to increase the "pipelining potential" for running the next frame while rendering the current frame.
 - Prepare - Prepare render resources from extracted data.
-- Queue - Create Bind Groups that depend on Prepare data and queue up draw calls to run during the Render stage.
+- Queue - Create Bind Groups that depend on Prepare's data and queue up draw calls to run during the Render stage.
 - PhaseSort - Sort RenderPhases here
-- Render - Actual rendering happens here. In most cases, only the render backend should insert resources here
-- Cleanup - Cleanup render resources here.
+- Render - Actual rendering happens here. In most cases, only the render backend should insert resources here.
+- Cleanup - Clean up render resources here.
 
-Some of these stages might be changed or new ones added in the future.
+Some of these stages might be changed, And perhaps some new ones would be added in the future.
 
 <!-- TODO: Replace this section when the time comes. -->
-## 1. Building the shaders, pipelines, and bind group layouts using `FromWorld`.
+## 1. Building the shaders, pipelines, and bind-group layouts using `FromWorld`.
 
-`FromWorld` is a trait provided by bevy that allows you to directly access world when initializing a resource for the first time. In the future loading shaders/pipelines/layouts using `FromWorld` will be replace by the asset system.
+`FromWorld` is a trait provided by Bevy that allows you to directly access the World when initializing a resource for the first time. In the future, loading shaders/pipelines/layouts using `FromWorld` will be replaced by the asset system.
 
 Example:
 
@@ -28,12 +28,12 @@ pub struct MyResource;
 
 impl FromWorld for MyResource {
     fn from_world(world: &mut World) -> Self {
-        // Do stuff with world here and return bevy resource.
+        // Do stuff with world here and return a Bevy resource.
     }
 }
 ```
 
-Using this trait we can build out our render/compute pipelines and bind group layouts. Example:
+Using this trait we can build out our render/compute pipelines and bind-group layouts. Example:
 ```rust
     // Grab the render device from world.
     let render_device = world.get_resource::<RenderDevice>().unwrap();
@@ -63,7 +63,7 @@ Using this trait we can build out our render/compute pipelines and bind group la
     });
 
 
-    // Create our bind group layouts for the shader
+    // Create our bind-group layouts for the shader
     // In this example we'll just have 1 layout which represents
     // our view matrix.
     let view_layout = render_device.create_bind_group_layout(&BindGroupLayoutDescriptor {
@@ -84,20 +84,20 @@ Using this trait we can build out our render/compute pipelines and bind group la
         label: None,
     });
 
-    // Now create the pipeline layout again exactly the same as wgpu.
+    // Now create the pipeline layout again, exactly the same as you would with wgpu.
     let pipeline_layout = render_device.create_pipeline_layout(&PipelineLayoutDescriptor {
         label: None,
         push_constant_ranges: &[],
         bind_group_layouts: &[&view_layout],
     });
 
-    // Now we can create our vertex state:
+    // Now, we can create our vertex state:
     let vertex_state = VertexState {
         buffers: &[VertexBufferLayout {
             array_stride: 32, // The total byte size of a single vertex.
             step_mode: InputStepMode::Vertex,
             attributes: &[
-                // Because bevy meshes sort attributes alphabetically the first attribute
+                // Because Bevy meshes sort attributes alphabetically the first attribute
                 // is actually Normal. Notice the offsets are different, but we want the
                 // shader location to be 0. After all position, normal, uv is fairly
                 // standard.
@@ -131,7 +131,7 @@ Using this trait we can build out our render/compute pipelines and bind group la
         entry_point: "main",
         // Information about the target texture the fragment is writing to.
         targets: &[ColorTargetState {
-            // Default frame buffer texture bevy uses.
+            // Default frame buffer texture Bevy uses.
             format: TextureFormat::bevy_default(), 
             // Default blend states.
             blend: Some(BlendState {
@@ -152,7 +152,7 @@ Using this trait we can build out our render/compute pipelines and bind group la
 
     // Create depth state.
     let depth_stencil_state = DepthStencilState {
-        // Default bevy depth format.
+        // Default Bevy depth format.
         format: TextureFormat::Depth32Float,
         depth_write_enabled: true,
         depth_compare: CompareFunction::Less,
@@ -180,7 +180,7 @@ Using this trait we can build out our render/compute pipelines and bind group la
         conservative: false,
     };
 
-    // Finally create the pipeline.
+    // Finally create the pipeline itself.
     let pipeline = render_device.create_render_pipeline(&RenderPipelineDescriptor {
         label: None,
         vertex: vertex_state,
@@ -191,13 +191,13 @@ Using this trait we can build out our render/compute pipelines and bind group la
         primitive: primitive_state,
     });
 ```
-A lot of the code in this section wasn't explained for a more detailed explanation please see the resource links in the [introduction](./introduction.md#additional-resources).
+A lot of the code in this section wasn't explained. For a more detailed explanation, please see the resource links in the [introduction](./introduction.md#additional-resources).
 
 
-## 2. Extract Stage: GPU data from ECS data that will be consumed by Prepare/Draw.
-Bevy's rendering system relies on this stage to extract any ECS data that should be given to the GPU. This can be things like meshes, uniforms, etc. 
+## 2. Extract Stage: Extract GPU data from Bevy ECS data that will be consumed by the Prepare/Draw stages.
+Bevy's rendering system relies on this stage to extract any ECS data that should be given to the GPU. These could be things like meshes, uniforms, etc. 
 
-First bevy expects some sort of extracted data type. Here is an example of what sprites look like:
+First, Bevy expects some sort of extracted data type. Here is an example of what sprites look like:
 
 ```rust
 struct ExtractedSprite {
@@ -207,9 +207,9 @@ struct ExtractedSprite {
 }
 ```
 
-Notice only the data being passed to the GPU lives inside of this struct. `bevy_sprite` also create a resource called `ExtractedSprites` which contains a vec of all of the extracted data something like `Vec<ExtractedSprite>`.
+Notice only the data being passed to the GPU lives inside of this struct. `Bevy_sprite` also creates a resource called `ExtractedSprites` which contains a vec of all of the extracted data. Something like `Vec<ExtractedSprite>`.
 
-Then we write a system which queries that data that we want and inserts it into the resource:
+Then, we write a system that queries the data that we want and inserts it into the resource:
 ```rust
 pub fn extract_sprites(
     mut commands: Commands,
@@ -218,7 +218,7 @@ pub fn extract_sprites(
 ) -> Self {
     let mut extracted_sprites = Vec::new();
     for (sprite, transform, image_handle) in query.iter() {
-        // Skip over sprites that have no loaded in image assets.
+        // Skip over sprites that have no loaded-in image assets.
         if !images.contains(image_handle) {
             continue;
         }
@@ -238,14 +238,14 @@ pub fn extract_sprites(
 }
 ```
 
-That's it for extraction. Obviously this is a super simple example and a more complex example might cache data and use a more complicated resource format aside from a `Vec`, but for simple sprite rendering this works quite well.
+That's it for extraction. Obviously this is a simple example. A more complex example might cache data, and use a more complicated resource format aside from a `Vec`. For simple sprite rendering, a regular Vec works quite well.
 
 ## 3. Prepare Stage: Prepares the GPU data by copying the data from the CPU to the GPU.
-In this stage we pass data from the CPU to the GPU by using various commands. See the chapter on GPU resources for a hint at how to push data from CPU to the GPU. Bevy provides some types to make this easier.
+In this stage we pass data from the CPU to the GPU by using various commands. See the chapter on GPU resources for a hint at how to push data from the CPU to the GPU. Bevy provides some types to make this easier.
 
-Setting up the "Meta" data which is passed to queue:
+Setting up the "Meta" data which is passed to the Queue stage:
 ```rust
-// Note: This is taken directly from `bevy_sprite` with added explanation comments.
+// Note: This is taken directly from `Bevy_sprite` with added explanation comments.
 #[repr(C)]
 #[derive(Copy, Clone, Pod, Zeroable)]
 struct SpriteVertex {
@@ -258,31 +258,31 @@ pub struct SpriteMeta {
     // which provides some convenience for taking CPU data and passing it to the GPU.
     vertices: BufferVec<SpriteVertex>,
     
-    // A vec of our indices using the same BufferVec as above.
+    // A vec of our indices, again using a BufferVec like above.
     indices: BufferVec<u32>,
     
-    // A bevy mesh representing a quad created using:
+    // A Bevy mesh representing a quad created using:
     // Quad {
     //  size: Vec2::new(1.0, 1.0),
     //  ..Default::default()
     // }
     quad: Mesh,
     
-    // Bind group for the view matrix.
-    // Will be explained more in the queue section.
+    // A bind group for the view matrix.
+    // Will be explained in more detail in the Queue stage's section.
     view_bind_group: Option<BindGroup>,
     
     // Bind groups for the textures.
-    // Will be explained more in the queue section.
+    // Will be explained in more detail in the queue section.
     texture_bind_groups: Vec<BindGroup>,
 
-    // A map of images to texture bind group id's.
-    // This is used later in the queue step to keep track of bindings
-    // that have been already created for a particular image.
+    // A map of images to texture bind-group ids.
+    // This is used later in the Queue step to keep track of bindings
+    // that have already been created for a particular image.
     texture_bind_group_indices: HashMap<Handle<Image>, usize>,
 }
 ```
-The metadata is created as a resource using: `init_resource::<SpriteMeta>()` and as such it requires implementing default.
+The metadata is created as a resource using: `init_resource::<SpriteMeta>()` and as such it requires implementing the Default trait.
 
 
 Example System:
@@ -292,12 +292,12 @@ fn prepare_sprites(
     mut sprite_meta: ResMut<SpriteMeta>,
     extracted_sprites: Res<ExtractedSprites>,
 ) {
-    // If we have no extract sprites jump out early..
+    // If we have no extract sprites, jump out early..
     if extracted_sprites.sprites.len() == 0 {
         return;
     }
 
-    // Grab our vertex position's for the quad mesh.
+    // Grab our vertex-positions for the quad mesh.
     let quad_vertex_positions = if let VertexAttributeValues::Float32x3(vertex_positions) =
         sprite_meta
             .quad
@@ -310,7 +310,7 @@ fn prepare_sprites(
         panic!("expected vec3");
     };
 
-    // Grab our vertex uv's for the quad mesh.
+    // Grab our vertex-uvs for the quad mesh.
     let quad_vertex_uvs = if let VertexAttributeValues::Float32x2(vertex_uvs) = sprite_meta
         .quad
         .attribute(Mesh::ATTRIBUTE_UV_0)
@@ -322,7 +322,7 @@ fn prepare_sprites(
         panic!("expected vec2");
     };
 
-    // Grab the quad indices.
+    // Grab the quad mesh's indices.
     let quad_indices = if let Indices::U32(indices) = sprite_meta.quad.indices().unwrap() {
         indices.clone()
     } else {
@@ -403,7 +403,7 @@ impl Node for SpriteNode {
 ```
 
 ## 4. Queue Stage: Creating bind groups and draw calls from extracted data.
-In this final stage before drawing we need to create bind groups and build out our draw calls.
+In this final stage before drawing, we need to create bind groups, and build out our draw calls.
 
 ### The Drawable struct
 Bevy uses a Drawable struct to represent draw calls. The struct looks like:
@@ -418,41 +418,41 @@ pub struct Drawable {
 
 - `draw_function` is an ID to the actual function which does the drawing. We cover this in the next [section]() below.
 - `draw_key` is just an index per draw call(I.E. an index to the sprite). Later this draw key is used to tell the draw commands which sprite is drawing.
-- `sort_key` the sort key represents an index to the binding collection. This part is a bit harder to explain but imagine you have two sprites. Sprite 1 has a texture A and sprite 2 has texture B. For each texture we have a separate bind group and a resulting index for that bind group. So sprite 1 has a `sort_key` of 1 and sprite 2 has a `sort_key` of 2. If they both shared the same texture the `sort_key` would equal 1 for both drawable instances. For more complex materials a more complex sort key is required. Bevy requires a sort key so it can efficiently render your draw calls in an order that requires the fewest state changes between them. Every time we switch pipelines, vertex buffers, or bind groups it is a costly operation on the GPU. By limiting the amount of switching required by sorting like items we can remove a lot of unnecessary state changes.
+- `sort_key` the sort key represents an index to the binding collection. This part is a bit harder to explain, but imagine you have two sprites. Sprite 1 has a texture A, and sprite 2 has a texture B. For each texture, we have a separate bind group, and as such resulting index for that bind group. So, sprite 1 has a `sort_key` of 1, and sprite 2, has a `sort_key` of 2. If they both shared the same texture, the `sort_key` would be 1 for both drawable instances. For more complex materials, a more complex sort key is required. Bevy requires a sort key so it can efficiently render your draw calls in an order that requires the fewest state changes between them. Every switch of pipelines, vertex buffers, or bind groups is a costly operation on the GPU. By limiting the amount of switching required by sorting like-items we can remove a lot of unnecessary state changes.
 
-Draw calls seem fairly easy to create so far, but where do we put the draw calls once we've created them? The bevy renderer has RenderPhases which help out with this. Currently bevy has the following render phases:
+Draw calls seem fairly easy to create so far, but where do we put the draw calls once we've created them? The Bevy renderer has RenderPhases which help out with this. Currently Bevy has the following render phases:
 
 - Transparent2dPhase
 - Transparent3dPhase
 
-These phases are used by the `MainPass2dNode` and the `MainPass3dNode` to draw stuff to the screen. In the future we can expect to likely see more render phases as well as more pass nodes. For example a full screen pass node can be expected which would be used for rendering post processing effects.
+These phases are used by the `MainPass2dNode` and the `MainPass3dNode` to draw stuff to the screen. In the future we can expect to likely see more render phases as well as more pass nodes. For example a full-screen pass node can be expected which would be used for rendering post-processing effects.
 
-`RenderPhase` itself is quite simple being a storage container for draw calls(`Drawable`) that also sorts the draw calls by the sort key.
+`RenderPhase` itself is quite simple, being a storage container for draw calls(`Drawable`) that also sorts the draw calls by their sort key.
 
 ### Creating bind groups
-During the queue step one responsibility is to collect any assets/resources/etc and create bind groups with the data. For sprites in bevy this means locating the sprite texture building a bind group for each texture and a resulting sort key for said sprite. If you remember from before in the prepare step our sprite meta data has two additional fields called: `texture_bind_groups` and `texture_bind_group_indices`. When we create a bind group for a texture we'll insert that bind group into `texture_bind_groups`. We'll also insert the texture being used into `texture_bind_group_indices` hash map where the key is the handle to the image and the value is the index pointing to the bind group in `texture_bind_groups`. We only want to create 1 bind group per texture and not a bind group per sprite in the following code example you'll see how we can leverage the hashmap in order to optimize our bind groups. Finally we also have a `view_bind_group` which will contain our bind group for the camera's data.
+During the queue step, one responsibility is to collect any assets/resources/etc and create bind groups with that data. For sprites in Bevy, this means locating the sprite texture, building a bind-group for each texture, and a resulting sort-key for said sprite. If you remember from before in the prepare step, our sprite meta-data has two additional fields called: `texture_bind_groups` and `texture_bind_group_indices`. When we create a bind group for a texture, we'll insert that bind group into `texture_bind_groups`. We'll also insert the texture used into the `texture_bind_group_indices` HashMap where the key is the handle to the image and the value is the index pointing to the bind group in `texture_bind_groups`. We only want to create 1 bind group per texture, and not a bind group per sprite. in the following code example you'll see how we can leverage the HashMap in order to optimize our bind groups. Finally, we also have a `view_bind_group` which will contain our bind-group for the camera's data.
 
 ### Example
 
 ```rust
 pub fn queue_sprites(
     // A resource containing all of the draw call functions.
-    // This is explained more in the next section.
+    // This is explained in more detail in the next section.
     draw_functions: Res<DrawFunctions>,
-    // The wgpu device wrapper bevy provides which is used to create bind groups.
+    // The wgpu device wrapper Bevy provides which is used to create bind groups.
     render_device: Res<RenderDevice>,
-    // Our sprite meta data from the previous step.
+    // Our sprite meta-data from the previous step.
     mut sprite_meta: ResMut<SpriteMeta>,
-    // Bevy's default camera view meta data.
+    // Bevy's default camera-view meta-data.
     // This is a great example of how we can use data from other rendering plugins.
-    // Here we have meta data that bevy creates for the active camera.
-    // Since the meta data is created in prepare we can be assured that the
-    // data will be available in queue even across rendering plugins.
+    // Here we have meta-data that Bevy creates for the active camera.
+    // Since the meta-data is created in Prepare we can be assured that the
+    // data will be available in Queue even across rendering plugins.
     view_meta: Res<ViewMeta>,
-    // Our sprite shaders resource which contains our bind group layouts.
+    // Our sprite shaders resource which contains our bind-group layouts.
     // These were created in the first step.
     sprite_shaders: Res<SpriteShaders>,
-    // The extracted sprites from the extract step.
+    // The extracted sprites from the Extract step.
     extracted_sprites: Res<ExtractedSprites>,
     // A list of all image(texture) assets.
     gpu_images: Res<RenderAssets<Image>>,
@@ -477,12 +477,12 @@ pub fn queue_sprites(
     // Iterate over each render phase. In this example there is only one phase.
     for mut transparent_phase in views.iter_mut() {
         let texture_bind_groups = &mut sprite_meta.texture_bind_groups;
-        // Loop through each sprite in extracted sprite and enumerate which will
-        // become our draw_key.
+        // Loop through each sprite in the extracted sprites collection and enumerate on them. Their 
+        // index will become our draw_key.
         for (i, sprite) in extracted_sprites.sprites.iter().enumerate() {
-            // Now we create the bind group if it doesn't exist.
-            // OR we pull the bind group index from the texture_bind_group_indices
-            // hashmap.
+            // Now we either create the bind group if it doesn't exist.
+            // OR we pull the bind-group index from the texture_bind_group_indices
+            // HashMap.
             let bind_group_index = *sprite_meta
                 .texture_bind_group_indices
                 .entry(sprite.handle.clone_weak())
@@ -520,18 +520,18 @@ pub fn queue_sprites(
                 draw_function: draw_sprite_function,
                 // Our draw key which in this case is just the sprite index.
                 draw_key: i,
-                // Our sort key which is the bind group index.
-                // Render phase will later sort the drawable's using this key.
+                // Our sort key which is the bind-group index.
+                // Render phase will later sort the drawables using this key.
                 sort_key: bind_group_index,
             });
         }
     }
 }
 ```
-And that wraps up queue. The reason queue feels more complex than some of the other steps is because of the need for sort keys to optimize our draw calls. Hopefully its clear by now how that can be a relatively simple thing. Its even neat to see how we can bring in data from other rendering plugins and use it in our plugin with minimal issues.
+And that wraps up Queue. The reason Queue feels more complex than some of the other steps is because of the need for sort-keys to optimize our draw calls. Hopefully it's clear by now how that can be relatively simple. It's neat to see how we can bring in data from other rendering plugins and use it in our plugin with minimal issues.
 
 ## 5. Draw Stage: Draw by setting pipelines, bindings, buffers, and calling draw commands.
-To create a drawable a draw function is required. The draw function tells bevy what pipelines, bind groups, vertex buffers, and what draw commands to use. 
+To create a drawable, a draw function is required. The draw function tells Bevy what pipelines, bind groups, vertex buffers, and what draw commands to use. 
 
 Example:
 ```rust
@@ -565,7 +565,7 @@ impl DrawSprite {
 impl Draw for DrawSprite {
     fn draw<'w>(
         &mut self,
-        // The bevy world
+        // The Bevy world
         world: &'w World,
         // The current render pass that has some internal state.
         pass: &mut TrackedRenderPass<'w>,
@@ -601,7 +601,7 @@ impl Draw for DrawSprite {
         );
 
         // Set the bind group for the texture by using the sort key to look up the
-        // bind groups we created in the queue step.
+        // bind groups we created in the Queue step.
         pass.set_bind_group(1, &sprite_meta.texture_bind_groups[sort_key], &[]);
 
         // Finally draw our sprite using the draw_key as an index into the vertex/indices
@@ -615,12 +615,12 @@ impl Draw for DrawSprite {
 }
 ```
 
-If you'll notice at first glance it appears as though we are resetting the pipelines/bind groups/etc for each draw call, but bevy uses a `TrackedRenderPass` which has state that wont allow the same thing to be set twice. Example:
+If you'll notice, at first glance it appears as though we are resetting the pipelines/bind groups/etc for each draw call. Instead Bevy uses a `TrackedRenderPass` which has state that won't allow the same thing to be set twice. Example:
 ```rust
     pub fn set_render_pipeline(&mut self, pipeline: &'a RenderPipeline) {
         debug!("set pipeline: {:?}", pipeline);
         // Check the state to see if we've already 
-        // set this pipeline last. If true we return.
+        // set this pipeline last. If true, we return early.
         if self.state.is_pipeline_set(pipeline.id()) {
             return;
         }
