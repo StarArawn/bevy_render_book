@@ -84,7 +84,7 @@ Using this trait we can build out our render/compute pipelines and bind-group la
         label: None,
     });
 
-    // Now create the pipeline layout again, exactly the same you would with wgpu.
+    // Now create the pipeline layout again, exactly the same as you would with wgpu.
     let pipeline_layout = render_device.create_pipeline_layout(&PipelineLayoutDescriptor {
         label: None,
         push_constant_ranges: &[],
